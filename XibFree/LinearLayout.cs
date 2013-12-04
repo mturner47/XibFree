@@ -20,54 +20,34 @@ using System.Linq;
 
 namespace XibFree
 {
+	/// <summary>Specifies vertical or horizontal orientation.</summary>
+	public enum Orientation
+	{
+		Horizontal,
+		Vertical
+	}
+
 	public sealed class LinearLayout : ViewGroup
 	{
 		// Fields
 		private readonly Orientation _orientation;
 
-		/// <summary>
-		/// Initializes a new instance of the <see cref="XibFree.LinearLayout"/> class.
-		/// </summary>
-		public LinearLayout()
-		{
-			LayoutParameters.Width = Dimension.FillParent;
-			LayoutParameters.Height = Dimension.FillParent;
-		}
-
-		/// <summary>
-		/// Initializes a new instance of the <see cref="XibFree.LinearLayout"/> class.
-		/// </summary>
+		/// <summary>Initializes a new instance of the <see cref="XibFree.LinearLayout"/> class.</summary>
 		/// <param name="orientation">Specifies the horizontal or vertical orientation of this layout.</param>
-		public LinearLayout(Orientation orientation) : this()
+		public LinearLayout(Orientation orientation)
 		{
 			_orientation = orientation;
-			Gravity = Gravity.TopLeft;
 		}
 
-		/// <summary>
-		/// Explicitly specify the total weight of the sub views that have size of FillParent
-		/// </summary>
-		/// <value>The total weight.</value>
+		/// <summary>Explicitly specify the total weight of the sub views that have size of FillParent</summary>
 		/// <description>If not specified, the total weight is calculated by adding the LayoutParameters.Weight of
 		/// each subview that has a size of FillParent.</description>
 		public float TotalWeight { get; set; }
 
-		/// <summary>
-		/// Specifies the gravity for views contained within this layout
-		/// </summary>
-		/// <value>One of the Gravity constants</value>
-		public Gravity Gravity { get; set; }
-
-		/// <summary>
-		/// Gets or sets the spacing between stacked subviews
-		/// </summary>
-		/// <value>The amount of spacing.</value>
+		/// <summary>Gets or sets the spacing between stacked subviews</summary>
 		public float Spacing { get; set; }
 
-		/// <summary>
-		/// Sets an init Action that allows performing actions on the View
-		/// </summary>
-		/// <value>The init.</value>
+		/// <summary>Sets an init Action that allows performing actions on the View</summary>
 		public Action<LinearLayout> Init
 		{
 			set { value(this); }
@@ -76,7 +56,7 @@ namespace XibFree
 		// Overridden to provide layout measurement
 		protected override void OnMeasure(float parentWidth, float parentHeight)
 		{
-			if (_orientation==Orientation.Vertical) MeasureVertical(parentWidth, parentHeight);
+			if (_orientation == Orientation.Vertical) MeasureVertical(parentWidth, parentHeight);
 			else MeasureHorizontal(parentWidth, parentHeight);
 		}
 
@@ -207,7 +187,7 @@ namespace XibFree
 			var totalFixedSize = 0f;
 			var totalWeight = 0f;
 			var visibleViewCount = 0;
-			foreach (var v in SubViews.Where(x=>!x.Gone))
+			foreach (var v in SubViews.Where(x => !x.Gone))
 			{
 				if (v.LayoutParameters.Width.Unit == Units.ParentRatio)
 				{
@@ -314,37 +294,28 @@ namespace XibFree
 		{
 			base.OnLayout(newPosition, parentHidden);
 
-			if (!parentHidden && Visible)
-			{
-				if (_orientation==Orientation.Vertical)
-				{
-					LayoutVertical(newPosition);
-				}
-				else
-				{
-					LayoutHorizontal(newPosition);
-				}
-			}
+			if (parentHidden || !Visible) return;
+
+			var basePosition = new RectangleF(0, 0, newPosition.Width, newPosition.Height);
+			if (_orientation == Orientation.Vertical) LayoutVertical(basePosition);
+			else LayoutHorizontal(basePosition);
 		}
 
 		// Do subview layout when in vertical orientation
 		private void LayoutVertical(RectangleF newPosition)
 		{
-			float y;
-			switch (Gravity & Gravity.VerticalMask)
+			var y = 0f;
+			switch (LayoutParameters.Gravity & Gravity.VerticalMask)
 			{
-				default:
+				case Gravity.Top:
 					y= newPosition.Top + Padding.Top;
 					break;
-
 				case Gravity.Bottom:
 					y = newPosition.Bottom - GetTotalMeasuredHeight() + Padding.Top;
 					break;
-
 				case Gravity.CenterVertical:
 					y = (newPosition.Top + newPosition.Bottom)/2 - GetTotalMeasuredHeight()/2 + Padding.Top;
 					break;
-
 			}
 
 			var first = true;
@@ -358,20 +329,15 @@ namespace XibFree
 					continue;
 				}
 
-				if (!first)
-					y += Spacing;
-				else
-					first = false;
-				
+				if (!first) y += Spacing;
+				else first = false;
 
-				y+= v.LayoutParameters.Margins.Top;
+				y += v.LayoutParameters.Margins.Top;
 
 				var size = v.GetMeasuredSize();
 
 				// Work out horizontal gravity for this control
 				var g = v.LayoutParameters.Gravity & Gravity.HorizontalMask;
-				if (g == Gravity.None)
-					g = Gravity & Gravity.HorizontalMask;
 
 				float x;
 				switch (g)
@@ -385,8 +351,7 @@ namespace XibFree
 						break;
 
 					case Gravity.CenterHorizontal:
-						x = (newPosition.Left + newPosition.Right)/2
-							- (size.Width + v.LayoutParameters.Margins.TotalWidth())/2;
+						x = (newPosition.Left + newPosition.Right)/2 - (size.Width + v.LayoutParameters.Margins.TotalWidth())/2;
 						break;
 				}
 
@@ -401,7 +366,7 @@ namespace XibFree
 		private void LayoutHorizontal(RectangleF newPosition)
 		{
 			float x;
-			switch (Gravity & Gravity.HorizontalMask)
+			switch (LayoutParameters.Gravity & Gravity.HorizontalMask)
 			{
 				default:
 					x = newPosition.Left + Padding.Left;
@@ -439,8 +404,6 @@ namespace XibFree
 				
 				// Work out vertical gravity for this control
 				var g = v.LayoutParameters.Gravity & Gravity.VerticalMask;
-				if (g == Gravity.None)
-					g = Gravity & Gravity.VerticalMask;
 				
 				float y;
 				switch (g)

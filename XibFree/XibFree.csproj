@@ -56,7 +56,6 @@
     <Compile Include="UILayoutHost.cs" />
     <Compile Include="NativeView.cs" />
     <Compile Include="Gravity.cs" />
-    <Compile Include="Orientation.cs" />
     <Compile Include="FrameLayout.cs" />
     <Compile Include="PublicExtensions.cs" />
     <Compile Include="Visibility.cs" />

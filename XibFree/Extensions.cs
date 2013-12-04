@@ -32,9 +32,7 @@ namespace XibFree
 			return Math.Abs(f - float.MaxValue) < float.Epsilon;
 		}
 
-		/// <summary>
-		/// Applies a set of UIEdgeInsets to a RectangleF
-		/// </summary>
+		/// <summary>Applies a set of UIEdgeInsets to a RectangleF</summary>
 		/// <returns>The adjusted rectangle</returns>
 		/// <param name="rect">The rectangle to be adjusted.</param>
 		/// <param name="insets">The edge insets to be applied</param>

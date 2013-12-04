@@ -19,39 +19,15 @@ using System.Drawing;
 
 namespace XibFree
 {
-	public enum Units
-	{
-		Absolute,			// Absolute pixel dimension
-		ParentRatio,		// Ratio of parent size
-		ContentRatio,		// Ratio of content size
-		AspectRatio,		// Ratio of adjacent dimension size
-		ScreenRatio,		// Ratio of the current screen size
-		HostRatio,			// Ratio of the current UIViewHost window size
-	}
-
-
-	/// <summary>
-	/// LayoutParameters declare how a view should be laid out by it's parent view group.
-	/// </summary>
+	/// <summary>LayoutParameters declare how a view should be laid out by it's parent view group.</summary>
 	public class LayoutParameters
 	{
 		private UIEdgeInsets _margins;
 
-		/// <summary>
-		/// Initializes a new instance of the <see cref="XibFree.LayoutParameters"/> class.
-		/// </summary>
-		public LayoutParameters()
-		{
-			Width = Dimension.WrapContent;
-			Height = Dimension.WrapContent;
-			Margins = UIEdgeInsets.Zero;
-			Weight = 1;
-			Gravity = Gravity.None;
-		}
+		/// <summary>Initializes a new instance of the <see cref="XibFree.LayoutParameters"/> class.</summary>
+		public LayoutParameters() : this(Dimension.WrapContent, Dimension.WrapContent) {}
 
-		/// <summary>
-		/// Initializes a new instance of the <see cref="XibFree.LayoutParameters"/> class.
-		/// </summary>
+		/// <summary>Initializes a new instance of the <see cref="XibFree.LayoutParameters"/> class.</summary>
 		/// <param name="width">Width.</param>
 		/// <param name="height">Height.</param>
 		/// <param name="weight">Weight.</param>
@@ -61,157 +37,70 @@ namespace XibFree
 			Height = height;
 			Margins = UIEdgeInsets.Zero;
 			Weight = weight;
-			Gravity = Gravity.None;
+			Gravity = Gravity.Default;
 		}
 
-		/// <summary>
-		/// Gets or sets the width dimension (value and unit of measurement)
-		/// </summary>
-		/// <value>The width.</value>
+		/// <summary>Gets or sets the width dimension (value and unit of measurement)</summary>
 		public Dimension Width { get; set; }
 
-		/// <summary>
-		/// Gets or sets the height dimension (value and unit of measurement)
-		/// </summary>
-		/// <value>The height.</value>
+		/// <summary>Gets or sets the height dimension (value and unit of measurement)</summary>
 		public Dimension Height { get; set; }
 
-		/// <summary>
-		/// Gets or sets the weight of a AutoSize.FillParent view relative to its sibling views
-		/// </summary>
-		/// <value>The weighting value for this view's size.</value>
+		/// <summary>Gets or sets the weight of a AutoSize.FillParent view relative to its sibling views</summary>
 		public float Weight { get; set; }
 
-		/// <summary>
-		/// Gets or sets the whitepsace margins that should be left around a view
-		/// </summary>
-		/// <value>The margins sizes</value>
+		/// <summary>Gets or sets the whitepsace margins that should be left around a view</summary>
 		public UIEdgeInsets Margins
 		{
-			get
-			{
-				return _margins;
-			}
-
-			set
-			{
-				_margins = value;
-			}
+			get { return _margins; }
+			set { _margins = value; }
 		}
 
-		/// <summary>
-		/// Gets or sets the left margin.
-		/// </summary>
-		/// <value>The left margin size.</value>
+		/// <summary>Gets or sets the left margin.</summary>
 		public float MarginLeft
 		{
-			get
-			{
-				return Margins.Left;
-			}
-			set
-			{
-				_margins.Left = value;
-			}
+			get { return Margins.Left; }
+			set { _margins.Left = value; }
 		}
 		
-		/// <summary>
-		/// Gets or sets the right margin.
-		/// </summary>
-		/// <value>The right margin size.</value>
+		/// <summary>Gets or sets the right margin.</summary>
 		public float MarginRight
 		{
-			get
-			{
-				return Margins.Right;
-			}
-			set
-			{
-				_margins.Right = value;
-			}
+			get { return Margins.Right; }
+			set { _margins.Right = value; }
 		}
 		
-		/// <summary>
-		/// Gets or sets the top margin.
-		/// </summary>
-		/// <value>The top margin size.</value>
+		/// <summary>Gets or sets the top margin.</summary>
 		public float MarginTop
 		{
-			get
-			{
-				return Margins.Top;
-			}
-			set
-			{
-				_margins.Top = value;
-			}
+			get { return Margins.Top; }
+			set { _margins.Top = value; }
 		}
 		
-		/// <summary>
-		/// Gets or sets the bottom margin.
-		/// </summary>
-		/// <value>The bottom margin size.</value>
+		/// <summary>Gets or sets the bottom margin.</summary>
 		public float MarginBottom
 		{
-			get
-			{
-				return Margins.Bottom;
-			}
-			set
-			{
-				_margins.Bottom = value;
-			}
+			get { return Margins.Bottom; }
+			set { _margins.Bottom = value; }
 		}
 		
-		/// <summary>
-		/// Gets or sets the gravity for this view within it's parent subview
-		/// </summary>
-		/// <value>One of the gravity constants</value>
+		/// <summary>Gets or sets the gravity for this view within it's parent subview</summary>
 		public Gravity Gravity { get; set; }
 
-		/// <summary>
-		/// Gets or sets the visibility of this view
-		/// </summary>
-		/// <value>One of the Visibility constants</value>
+		/// <summary>Gets or sets the visibility of this view</summary>
 		public Visibility Visibility { get; set; }
 
-		/// <summary>
-		/// Gets or sets the minimum width.
-		/// </summary>
-		/// <value>The minimum width.</value>
+		/// <summary>Gets or sets the minimum width.</summary>
 		public float MinWidth { get; set; }
 
-		/// <summary>
-		/// Gets or sets the maximum width.
-		/// </summary>
-		/// <value>The maximum width.</value>
+		/// <summary>Gets or sets the maximum width.</summary>
 		public float MaxWidth { get; set; }
 
-		/// <summary>
-		/// Gets or sets the minimum height.
-		/// </summary>
-		/// <value>The minimum height.</value>
+		/// <summary>Gets or sets the minimum height.</summary>
 		public float MinHeight { get; set; }
 
-		/// <summary>
-		/// Gets or sets the max height.
-		/// </summary>
-		/// <value>The maximum height</value>
+		/// <summary>Gets or sets the max height.</summary>
 		public float MaxHeight { get; set; }
-
-		private static float TryResolve(Dimension dimension, float parentSize)
-		{
-			var ratio = dimension.Ratio;
-			switch (dimension.Unit)
-			{
-				case Units.Absolute:
-					return dimension.Value;
-				case Units.ParentRatio:
-					return parentSize.IsMaxFloat() ? float.MaxValue : parentSize * ratio;
-				default:
-					return float.MaxValue;
-			}
-		}
 
 		private static SizeF GetScreenSize()
 		{
@@ -230,7 +119,7 @@ namespace XibFree
 		internal SizeF GetHostSize(View view)
 		{
 			// Get the host
-			var host = view.GetHost();
+			var host = view.Host;
 			if (host == null) return GetScreenSize();
 
 			var hostView = host.GetUIView();
@@ -241,6 +130,20 @@ namespace XibFree
 
 			// Return size
 			return hostView.Bounds.Size;
+		}
+
+		private static float TryResolve(Dimension dimension, float parentSize)
+		{
+			var ratio = dimension.Ratio;
+			switch (dimension.Unit)
+			{
+				case Units.Absolute:
+					return dimension.Value;
+				case Units.ParentRatio:
+					return parentSize.IsMaxFloat() ? float.MaxValue : parentSize * ratio;
+				default:
+					return float.MaxValue;
+			}
 		}
 
 		internal float TryResolveWidth(View view, float parentWidth)

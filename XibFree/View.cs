@@ -17,64 +17,100 @@
 using System;
 using MonoTouch.UIKit;
 using System.Drawing;
-using MonoTouch.CoreAnimation;
 
 namespace XibFree
 {
-	/// <summary>
-	/// Abstract base class for any item in the layout view hierarchy
-	/// </summary>
+	/// <summary>Abstract base class for any item in the layout view hierarchy</summary>
 	public abstract class View
 	{
 		private SizeF _measuredSize;
 		private bool _measuredSizeValid;
 		private ViewGroup _parent;
+		private UIView _innerView;
+		private IHost _host;
 
-		/// <summary>
-		/// Gets or sets this view's parent view
-		/// </summary>
-		/// <value>A reference to the parent view (or null)</value>
+		protected View()
+		{
+			LayoutParameters = new LayoutParameters
+			{
+				Gravity = Gravity.TopLeft
+			};
+		}
+
+		/// <summary>Gets or sets this view's parent view</summary>
 		public ViewGroup Parent
 		{
 			get { return _parent; }
 			internal set
 			{
 				if (_parent == value) return;
+				if (_parent != null)
+				{
+					_parent.RemoveSubView(this);
+				}
 
-				// Detach old host
-				var host = GetHost();
-				if (host != null) OnDetach();
-
-				// Store new parent
 				_parent = value;
 
-				// Attach to new host
-				host = GetHost();
-				if (host != null) OnAttach(host);
+				if (_parent != null)
+				{
+					_parent.AddSubView(this);
+				}
 			}
 		}
 
-		/// <summary>
-		/// Gets or sets the layout parameters for this view
-		/// </summary>
-		/// <value>The layout parameters.</value>
-		public virtual LayoutParameters LayoutParameters { get; set; }
-
-		// Internal helper to walk the parent view hierachy and find the view that's hosting this view hierarchy
-		internal virtual IHost GetHost()
+		public virtual UIView InnerView
 		{
-			return (_parent != null) ? _parent.GetHost() : null;
+			get
+			{
+				if (_innerView != null) return _innerView;
+				_innerView = new UIView(RectangleF.Empty)
+				{
+					BackgroundColor = UIColor.Clear,
+					AutoresizingMask = UIViewAutoresizing.None,
+				};
+				return _innerView;
+			}
+			set
+			{
+				if (_innerView == value) return;
+
+				if (_innerView.Superview != null) InnerView.RemoveFromSuperview();
+
+				if (value == null) return;
+				_innerView = value;
+
+				// Turn off auto-resizing, we'll take care of that thanks
+				_innerView.AutoresizingMask = UIViewAutoresizing.None;
+			}
 		}
 
-		// Internal notification that this view has been attached to a hosting view
-		internal virtual void OnAttach(IHost host) { }
+		/// <summary>Gets or sets the layout parameters for this view</summary>
+		public LayoutParameters LayoutParameters { get; set; }
 
-		// Internal notification that this view has been detached from a hosting view
-		internal virtual void OnDetach() { }
+		// Internal helper to walk the parent view hierachy and find the view that's hosting this view hierarchy
+		internal IHost Host
+		{
+			get
+			{
+				if (_host != null) return _host;
+				return Parent != null ? Parent.Host : null;
+			}
+			set { _host = value; }
+		}
 
-		/// <summary>
-		/// Layout the subviews in this view using dimensions calculated during the last measure cycle
-		/// </summary>
+		public bool Gone
+		{
+			get { return LayoutParameters.Visibility == Visibility.Gone; }
+			set { LayoutParameters.Visibility = value ? Visibility.Gone : Visibility.Visible; }
+		}
+
+		public bool Visible
+		{
+			get { return LayoutParameters.Visibility == Visibility.Visible; }
+			set { LayoutParameters.Visibility = value ? Visibility.Visible : Visibility.Invisible; }
+		}
+
+		/// <summary>Layout the subviews in this view using dimensions calculated during the last measure cycle</summary>
 		/// <param name="newPosition">The new position of this view</param>
 		/// <param name="parentHidden">Whether the parent is hidden</param>
 		public void Layout(RectangleF newPosition, bool parentHidden)
@@ -82,16 +118,12 @@ namespace XibFree
 			OnLayout(newPosition, parentHidden);
 		}
 
-		/// <summary>
-		/// Overridden by view groups to perform the actual layout process
-		/// </summary>
+		/// <summary>Overridden by view groups to perform the actual layout process</summary>
 		/// <param name="newPosition">New position.</param>
 		/// <param name="parentHidden">Whether the parent is hidden</param>
 		protected abstract void OnLayout(RectangleF newPosition, bool parentHidden);
 
-		/// <summary>
-		/// Measures the subviews of this view
-		/// </summary>
+		/// <summary>Measures the subviews of this view</summary>
 		/// <param name="parentWidth">Available width of the parent view group (might be float.MaxValue).</param>
 		/// <param name="parentHeight">Available height of the parent view group(might be float.MaxValue)</param>
 		public void Measure(float parentWidth, float parentHeight)
@@ -101,18 +133,10 @@ namespace XibFree
 			if (!_measuredSizeValid) throw new InvalidOperationException("onMeasure didn't set measurement before returning");
 		}
 
-		/// <summary>
-		/// Overridden by view groups to perform the actual layout measurement
-		/// </summary>
+		/// <summary>Overridden by view groups to perform the actual layout measurement</summary>
 		/// <param name="parentWidth">Parent width.</param>
 		/// <param name="parentHeight">Parent height.</param>
 		protected abstract void OnMeasure(float parentWidth, float parentHeight);
-
-		// Mark the measurement of this view as invalid
-		public void InvalidateMeasure()
-		{
-			_measuredSizeValid = false;
-		}
 
 		/// <summary>
 		/// Called by derived implementations of onMeasure to store the measured dimensions
@@ -131,9 +155,7 @@ namespace XibFree
 			_measuredSizeValid = true;
 		}
 
-		/// <summary>
-		/// Retrieve the measured dimensions of this view
-		/// </summary>
+		/// <summary>Retrieve the measured dimensions of this view</summary>
 		/// <returns>The measured size.</returns>
 		public SizeF GetMeasuredSize()
 		{
@@ -141,26 +163,17 @@ namespace XibFree
 			return _measuredSize;
 		}
 
-		internal abstract CALayer GetDisplayLayer();
-		internal abstract CALayer FindFirstSublayer();
-
-		/// <summary>
-		/// Overridden to locate a UIView 
-		/// </summary>
+		/// <summary>Overridden to locate a UIView</summary>
 		/// <returns>The view with tag.</returns>
 		/// <param name="tag">Tag.</param>
 		internal abstract UIView UIViewWithTag(int tag);
 
-		/// <summary>
-		/// Overridden to locate a layout hierarchy view
-		/// </summary>
+		/// <summary>Overridden to locate a layout hierarchy view</summary>
 		/// <returns>The view with tag.</returns>
 		/// <param name="tag">Tag.</param>
 		internal abstract View LayoutViewWithTag(int tag);
 
-		/// <summary>
-		/// Locates a view in either the layout or GUI hierarchy
-		/// </summary>
+		/// <summary>Locates a view in either the layout or GUI hierarchy</summary>
 		/// <returns>The view with tag.</returns>
 		/// <param name="tag">Tag.</param>
 		/// <typeparam name="T">The type of view to return</typeparam>
@@ -171,30 +184,6 @@ namespace XibFree
 		}
 
 		public abstract NativeView FindNativeView(UIView v);
-
-		public bool Gone
-		{
-			get
-			{
-				return LayoutParameters.Visibility == Visibility.Gone;
-			}
-			set
-			{
-				LayoutParameters.Visibility = value ? Visibility.Gone : Visibility.Visible;
-			}
-		}
-
-		public bool Visible
-		{
-			get
-			{
-				return LayoutParameters.Visibility == Visibility.Visible;
-			}
-			set
-			{
-				LayoutParameters.Visibility = value ? Visibility.Visible : Visibility.Invisible;
-			}
-		}
 
 		public void RemoveFromSuperview()
 		{

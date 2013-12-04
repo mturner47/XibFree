@@ -23,12 +23,15 @@ namespace Demo
 			// Frame layouts allow subviews that overlap each other
 			var layout = new FrameLayout
 			{
-				Padding = new UIEdgeInsets(10,10,10,10),
+				LayoutParameters = new LayoutParameters
+				{
+					Margins = new UIEdgeInsets(10, 10, 10, 10),
+				},
 				SubViews = new View[]
 				{
 					new NativeView
 					{
-						View = new UIView
+						InnerView = new UIView
 						{
 							BackgroundColor = UIColor.FromRGBA(255,0,0,128),
 						},
@@ -41,7 +44,7 @@ namespace Demo
 
 					new NativeView
 					{
-						View = new UIView
+						InnerView = new UIView
 						{
 							BackgroundColor = UIColor.FromRGBA(0,0,255,128),
 						},
@@ -56,7 +59,7 @@ namespace Demo
 
 					new NativeView
 					{
-						View = new UIView
+						InnerView = new UIView
 						{
 							BackgroundColor = UIColor.FromRGBA(0,0,0,128),
 						},

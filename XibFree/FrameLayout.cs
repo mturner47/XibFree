@@ -23,14 +23,6 @@ namespace XibFree
 {
 	public sealed class FrameLayout : ViewGroup
 	{
-		public FrameLayout()
-		{
-			LayoutParameters.Width = Dimension.FillParent;
-			LayoutParameters.Height = Dimension.FillParent;
-		}
-
-		public Gravity Gravity { get; set; }
-
 		public Action<FrameLayout> Init
 		{
 			set { value(this); }
@@ -52,11 +44,12 @@ namespace XibFree
 			var maxWidth = 0f;
 			var maxHeight = 0f;
 
-			foreach (var v in SubViews.Where(x=>!x.Gone))
+			foreach (var v in SubViews.Where(x => !x.Gone))
 			{
 				// Try to resolve subview width
 				var subViewWidth = float.MaxValue;
-				if (v.LayoutParameters.Width.Unit == Units.ParentRatio)
+				var lp = v.LayoutParameters;
+				if (lp.Width.Unit == Units.ParentRatio)
 				{
 					if (width.IsMaxFloat())
 					{
@@ -65,13 +58,13 @@ namespace XibFree
 					}
 					else
 					{
-						subViewWidth = width - v.LayoutParameters.Margins.TotalWidth();
+						subViewWidth = width - lp.Margins.TotalWidth();
 					}
 				}
 
 				// Try to resolve subview height
 				var subViewHeight = float.MaxValue;
-				if (v.LayoutParameters.Height.Unit == Units.ParentRatio)
+				if (lp.Height.Unit == Units.ParentRatio)
 				{
 					if (height.IsMaxFloat())
 					{
@@ -80,24 +73,16 @@ namespace XibFree
 					}
 					else
 					{
-						subViewHeight = height - v.LayoutParameters.Margins.TotalHeight();
+						subViewHeight = height - lp.Margins.TotalHeight();
 					}
 				}
 
 				// Measure it
 				v.Measure(subViewWidth, subViewHeight);
 
-				if (!haveResolvedSize)
-				{
-					maxWidth = v.GetMeasuredSize().Width + v.LayoutParameters.Margins.TotalWidth();
-					maxHeight = v.GetMeasuredSize().Height + v.LayoutParameters.Margins.TotalHeight();
-					haveResolvedSize = true;
-				}
-				else
-				{
-					maxWidth = Math.Max(maxWidth, v.GetMeasuredSize().Width + v.LayoutParameters.Margins.TotalWidth());
-					maxHeight = Math.Max(maxHeight, v.GetMeasuredSize().Height + v.LayoutParameters.Margins.TotalHeight());
-				}
+				maxWidth = Math.Max(maxWidth, v.GetMeasuredSize().Width + v.LayoutParameters.Margins.TotalWidth());
+				maxHeight = Math.Max(maxHeight, v.GetMeasuredSize().Height + v.LayoutParameters.Margins.TotalHeight());
+				haveResolvedSize = true;
 			}
 
 			// Now resolve the unresolved subviews by either using the dimensions of the view
@@ -124,7 +109,7 @@ namespace XibFree
 
 			if (width.IsMaxFloat())
 			{
-				sizeMeasured.Width = SubViews.Max(x=>x.GetMeasuredSize().Width + x.LayoutParameters.Margins.TotalWidth()) + Padding.TotalWidth();
+				sizeMeasured.Width = SubViews.Max(x => x.GetMeasuredSize().Width + x.LayoutParameters.Margins.TotalWidth()) + Padding.TotalWidth();
 			}
 
 			if (height.IsMaxFloat())
@@ -141,30 +126,29 @@ namespace XibFree
 			// Make room for padding
 			newPosition = newPosition.ApplyInsets(Padding);
 
-			if (!parentHidden && Visible)
+			if (parentHidden || !Visible) return;
+
+			// Position each view according to it's gravity
+			foreach (var v in SubViews)
 			{
-				// Position each view according to it's gravity
-				foreach (var v in SubViews)
+				if (v.Gone)
 				{
-					if (v.Gone)
-					{
-						v.Layout(RectangleF.Empty, false);
-						continue;
-					}
-
-					// If subview has a gravity specified, use it, otherwise use our own
-					var g = v.LayoutParameters.Gravity;
-					if (g == Gravity.None) g = Gravity;
-
-					// Get it's size
-					var size = v.GetMeasuredSize();
-
-					// Work out it's position by apply margins and gravity
-					var subViewPosition = newPosition.ApplyInsets(v.LayoutParameters.Margins).ApplyGravity(size, g);
-
-					// Position it
-					v.Layout(subViewPosition, false);
+					v.Layout(RectangleF.Empty, false);
+					continue;
 				}
+
+				// If subview has a gravity specified, use it, otherwise use default
+				var g = v.LayoutParameters.Gravity;
+
+				// Get it's size
+				var size = v.GetMeasuredSize();
+
+				var startingRect = new RectangleF(0, 0, newPosition.Width, newPosition.Height);
+				// Work out it's position by apply margins and gravity
+				var subViewPosition = startingRect.ApplyInsets(v.LayoutParameters.Margins).ApplyGravity(size, g);
+
+				// Position it
+				v.Layout(subViewPosition, false);
 			}
 		}
 	}

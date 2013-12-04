@@ -31,15 +31,18 @@ namespace Demo
 			// the layout of the contained NativeViews
 			var layout = new LinearLayout(Orientation.Vertical)
 			{
-				Padding = new UIEdgeInsets(10,10,10,10),
-				Gravity = Gravity.CenterVertical,
+				LayoutParameters = new LayoutParameters
+				{
+					Gravity = Gravity.CenterVertical,
+					Margins = new UIEdgeInsets(10, 10, 10, 10),
+				},
 				SubViews = new View[] 
 				{
 					// A NativeView contains an iOS UIView
 					new NativeView
 					{
 						// This is the UIView
-						View = new UIView(RectangleF.Empty)
+						InnerView = new UIView(RectangleF.Empty)
 						{
 							// Set properties here
 							BackgroundColor = UIColor.Red,
@@ -69,7 +72,7 @@ namespace Demo
 							new NativeView
 							{
 								// This time we're showing a UILabel
-								View = new UILabel(RectangleF.Empty)
+								InnerView = new UILabel(RectangleF.Empty)
 								{
 									BackgroundColor = UIColor.Purple,
 									Text="Hello World, this is a test to see if things wrap and measure correctly",
@@ -88,7 +91,7 @@ namespace Demo
 							new NativeView
 							{
 								// Here we're hosting a button
-								View = new UIButton(UIButtonType.RoundedRect)
+								InnerView = new UIButton(UIButtonType.RoundedRect)
 								{
 									Tag = 123,
 								},
@@ -115,7 +118,7 @@ namespace Demo
 					},
 					new NativeView
 					{
-						View = new UIImageView(UIImage.FromBundle("logo320.png"))
+						InnerView = new UIImageView(UIImage.FromBundle("logo320.png"))
 						{
 							ContentMode = UIViewContentMode.ScaleAspectFit,
 							//BackgroundColor = UIColor.White

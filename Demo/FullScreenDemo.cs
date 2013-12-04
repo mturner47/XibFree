@@ -99,7 +99,7 @@ namespace Demo
 		{
 			public Label(string title, UIFont font)
 			{
-				View = new UILabel(RectangleF.Empty)
+				InnerView = new UILabel(RectangleF.Empty)
 				{
 					Text = title,
 					Font = font,
@@ -123,7 +123,7 @@ namespace Demo
 				//var button = new UIButton(UIButtonType.RoundedRect);
 				var button = new GlassButton();
 				button.SetTitle(title, UIControlState.Normal);
-				View = button;
+				InnerView = button;
 
 				// Attach an event handler and forward the event
 				button.TouchUpInside += (sender, e) => handler();
@@ -143,18 +143,18 @@ namespace Demo
 			// Create the layout
 			var layout = new LinearLayout(Orientation.Vertical)
 			{
-				Padding = new UIEdgeInsets(10,10,10,10),
-				Gravity = Gravity.CenterHorizontal,
 				LayoutParameters = new LayoutParameters
 				{
 					Width = Dimension.FillParent,
 					Height = Dimension.WrapContent,
+					Gravity = Gravity.CenterHorizontal,
+					Margins = new UIEdgeInsets(10, 10, 10, 10),
 				},
 				SubViews = new View[]
 				{
 					new NativeView
 					{
-						View = new UIImageView
+						InnerView = new UIImageView
 						{
 							Image = UIImage.FromBundle("XibFree_512.png"),
 							ContentMode = UIViewContentMode.ScaleAspectFit,
@@ -172,7 +172,6 @@ namespace Demo
 					new LinearLayout(Orientation.Horizontal)
 					{
 						Spacing = 10,
-						Gravity = Gravity.CenterHorizontal,
 						SubViews = new View[]
 						{
 							new Button("Download", () => Alert("Download")),
@@ -183,11 +182,12 @@ namespace Demo
 							Width = Dimension.FillParent,
 							Height = Dimension.WrapContent,
 							MarginTop = 50,
+							Gravity = Gravity.CenterHorizontal,
 						}
 					},
 					new NativeView
 					{
-						View = new UIView
+						InnerView = new UIView
 						{
 							BackgroundColor = UIColor.FromRGBA(0, 0, 0, 10),
 						},

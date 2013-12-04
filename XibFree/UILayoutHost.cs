@@ -19,18 +19,14 @@ using System.Drawing;
 
 namespace XibFree
 {
-	/// <summary>
-	/// UILayoutHost is the native UIView that hosts that XibFree layout
-	/// </summary>
+	/// <summary>UILayoutHost is the native UIView that hosts that XibFree layout</summary>
 	public sealed class UILayoutHost : UIView, IHost
 	{
 		private ViewGroup _layout;
 
-		/// <summary>
-		/// Initializes a new instance of the <see cref="XibFree.UILayoutHost"/> class.
-		/// </summary>
+		/// <summary>Initializes a new instance of the <see cref="XibFree.UILayoutHost"/> class.</summary>
 		/// <param name="layout">Root of the view hierarchy to be hosted by this layout host</param>
-		/// <param name="frame">Frame for the UIView </param>
+		/// <param name="frame">Frame for the UIView</param>
 		public UILayoutHost(ViewGroup layout, RectangleF frame) : base(frame)
 		{
 			AutoresizingMask = UIViewAutoresizing.FlexibleDimensions;
@@ -48,26 +44,23 @@ namespace XibFree
 			Layout = layout;
 		}
 
-		/// <summary>
-		/// The ViewGroup declaring the layout to hosted
-		/// </summary>
-		/// <value>The ViewGroup.</value>
+		/// <summary>The ViewGroup declaring the layout to hosted</summary>
 		public ViewGroup Layout
 		{
 			get { return _layout; }
 			set
 			{
-				if (_layout != null) _layout.SetHost(null);
+				if (_layout == value) return;
+
+				if (_layout != null) _layout.Host = null;
 
 				_layout = value;
 
-				if (_layout != null) _layout.SetHost(this);
+				if (_layout != null) _layout.Host = this;
 			}
 		}
 
-		/// <summary>
-		/// Finds the NativeView associated with a UIView
-		/// </summary>
+		/// <summary>Finds the NativeView associated with a UIView</summary>
 		/// <returns>The native view.</returns>
 		/// <param name="view">View.</param>
 		public NativeView FindNativeView(UIView view)
@@ -85,9 +78,7 @@ namespace XibFree
 		}
 
 		/// <Docs>Lays out subviews.</Docs>
-		/// <summary>
-		/// Called by iOS to update the layout of this view
-		/// </summary>
+		/// <summary>Called by iOS to update the layout of this view</summary>
 		public override void LayoutSubviews()
 		{
 			if (_layout == null) return;
@@ -101,9 +92,7 @@ namespace XibFree
 
 		#region IHost implementation
 
-		/// <summary>
-		/// Provide the hosting view
-		/// </summary>
+		/// <summary>Provide the hosting view</summary>
 		public UIView GetUIView()
 		{
 			return this;
