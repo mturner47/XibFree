@@ -35,11 +35,12 @@ namespace XibFree
 			LayoutParameters.Height = Dimension.FillParent;
 		}
 
-		public override UIView InnerView
+		public override sealed UIView InnerView
 		{
 			get { return base.InnerView; }
 			set
 			{
+				if (base.InnerView == value) return;
 				base.InnerView = value;
 				foreach (var subView in SubViews)
 				{
@@ -61,10 +62,7 @@ namespace XibFree
 			set
 			{
 				// Check that none of the child subviews already have parents
-				if (value.Any(c => c.Parent != null))
-				{
-					throw new InvalidOperationException("View is already a child of another ViewGroup");
-				}
+				if (value.Any(c => c.Parent != null)) throw new InvalidOperationException("View is already a child of another ViewGroup");
 
 				// Clear current subviews
 				foreach (var subView in _subViews) RemoveSubView(subView);
@@ -115,8 +113,17 @@ namespace XibFree
 			view.Parent = this;
 
 			if (position < 0) position = _subViews.Count;
-			InnerView.AddSubview(view.InnerView);
+			InnerView.InsertSubview(view.InnerView, position);
 			_subViews.Insert(position, view);
+		}
+
+		internal void ReplaceInnerView(View view, UIView newInnerView)
+		{
+			var index = _subViews.IndexOf(view);
+			if (index == -1) return;
+
+			InnerView.Subviews[index].RemoveFromSuperview();
+			if (newInnerView != null) InnerView.InsertSubview(newInnerView, index);
 		}
 
 		/// <summary>Remove the specified subview</summary>
@@ -124,7 +131,7 @@ namespace XibFree
 		public void RemoveSubView(View view)
 		{
 			view.Parent = null;
-			view.RemoveFromSuperview();
+			view.InnerView.RemoveFromSuperview();
 			_subViews.Remove(view);
 		}
 
@@ -134,14 +141,11 @@ namespace XibFree
 			{
 				InnerView.Frame = newPosition;
 				InnerView.Hidden = false;
-			}
-			else
-			{
-				InnerView.Hidden = true;
-				InnerView.Frame = newPosition;
+				return;
 			}
 
-			if (!parentHidden && Visible) return;
+			InnerView.Hidden = true;
+			InnerView.Frame = newPosition;
 
 			// Hide all subviews
 			foreach (var v in SubViews) v.Layout(RectangleF.Empty, false);
@@ -159,8 +163,9 @@ namespace XibFree
 			return _subViews.Select(v => v.UIViewWithTag(tag)).FirstOrDefault(result => result != null);
 		}
 
-		public override NativeView FindNativeView(UIView view)
+		public override View FindNativeView(UIView view)
 		{
+			if (InnerView == view) return this;
 			return _subViews.Select(v => v.FindNativeView(view)).FirstOrDefault(result => result != null);
 		}
 	}

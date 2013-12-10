@@ -59,7 +59,7 @@ namespace XibFree
 			return InnerView as T;
 		}
 
-		public override NativeView FindNativeView(UIView v)
+		public override View FindNativeView(UIView v)
 		{
 			return (InnerView == v) ? this : null;
 		}
@@ -79,7 +79,7 @@ namespace XibFree
 		/// <summary>Overridden to provide measurement support for this native view</summary>
 		/// <param name="parentWidth">Parent width.</param>
 		/// <param name="parentHeight">Parent height.</param>
-		protected override void OnMeasure(float parentWidth, float parentHeight)
+		protected override void OnMeasure(float? parentWidth, float? parentHeight)
 		{
 			// Resolve width for absolute and parent ratio
 			var width = LayoutParameters.TryResolveWidth(this, parentWidth);
@@ -87,20 +87,20 @@ namespace XibFree
 
 			// Do we need to measure our content?
 			var sizeMeasured = SizeF.Empty;
-			if (width.IsMaxFloat() || height.IsMaxFloat())
+			if (!width.HasValue || !height.HasValue)
 			{
-				var sizeToFit = new SizeF(width, height);
+				var sizeToFitWidth = width ?? 0;
+				var sizeToFitHeight = height ?? 0;
+				var sizeToFit = new SizeF(sizeToFitWidth, sizeToFitHeight);
 				if (Measurer != null) sizeMeasured = Measurer(InnerView, sizeToFit);
 				else
 				{
 					sizeMeasured = InnerView.SizeThatFits(sizeToFit);
-					if (LayoutParameters.Width.Unit == Units.ContentRatio) sizeMeasured.Width = sizeMeasured.Width * LayoutParameters.Width.Value;
-					if (LayoutParameters.Height.Unit == Units.ContentRatio) sizeMeasured.Height = sizeMeasured.Height * LayoutParameters.Height.Value;
 				}
 			}
 
 			// Set the measured size
-			SetMeasuredSize(LayoutParameters.ResolveSize(new SizeF(width, height), sizeMeasured));
+			SetMeasuredSize(LayoutParameters.ResolveSize(width, height, sizeMeasured));
 		}
 
 		internal override UIView UIViewWithTag(int tag)

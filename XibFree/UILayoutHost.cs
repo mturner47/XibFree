@@ -16,11 +16,12 @@
 
 using MonoTouch.UIKit;
 using System.Drawing;
+using System;
 
 namespace XibFree
 {
 	/// <summary>UILayoutHost is the native UIView that hosts that XibFree layout</summary>
-	public sealed class UILayoutHost : UIView, IHost
+	public sealed class UILayoutHost : UIView
 	{
 		private ViewGroup _layout;
 
@@ -33,16 +34,7 @@ namespace XibFree
 			Layout = layout;
 		}
 
-		public UILayoutHost() 
-		{
-			AutoresizingMask = UIViewAutoresizing.FlexibleDimensions;
-		}
-
-		public UILayoutHost(ViewGroup layout) 
-		{
-			AutoresizingMask = UIViewAutoresizing.FlexibleDimensions;
-			Layout = layout;
-		}
+		public UILayoutHost(ViewGroup layout = null) : this(layout, RectangleF.Empty) { }
 
 		/// <summary>The ViewGroup declaring the layout to hosted</summary>
 		public ViewGroup Layout
@@ -52,18 +44,26 @@ namespace XibFree
 			{
 				if (_layout == value) return;
 
-				if (_layout != null) _layout.Host = null;
+				if (_layout != null) 
+				{
+					_layout.Host = null;
+					_layout.InnerView.RemoveFromSuperview();
+				}
 
 				_layout = value;
 
-				if (_layout != null) _layout.Host = this;
+				if (_layout != null) 
+				{
+					_layout.Host = this;
+					AddSubview(_layout.InnerView);
+				}
 			}
 		}
 
 		/// <summary>Finds the NativeView associated with a UIView</summary>
 		/// <returns>The native view.</returns>
 		/// <param name="view">View.</param>
-		public NativeView FindNativeView(UIView view)
+		public View FindNativeView(UIView view)
 		{
 			return _layout.FindNativeView(view);
 		}
@@ -82,23 +82,18 @@ namespace XibFree
 		public override void LayoutSubviews()
 		{
 			if (_layout == null) return;
-
 			// Remeasure
 			_layout.Measure(Bounds.Width, Bounds.Height);
 
-			// Apply layout
-			_layout.Layout(Bounds, false);
+			// Position it
+			_layout.Layout(_layout.MeasuredFrame(Bounds), false);
 		}
-
-		#region IHost implementation
 
 		/// <summary>Provide the hosting view</summary>
 		public UIView GetUIView()
 		{
 			return this;
 		}
-
-		#endregion
 	}
 }
 

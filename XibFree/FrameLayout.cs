@@ -28,7 +28,7 @@ namespace XibFree
 			set { value(this); }
 		}
 
-		protected override void OnMeasure(float parentWidth, float parentHeight)
+		protected override void OnMeasure(float? parentWidth, float? parentHeight)
 		{
 			var unresolved = new List<View>();
 
@@ -36,8 +36,8 @@ namespace XibFree
 			var height = LayoutParameters.TryResolveHeight(this, parentHeight);
 
 			// Remove padding
-			if (!width.IsMaxFloat()) width -= Padding.TotalWidth();
-			if (!height.IsMaxFloat()) height -= Padding.TotalHeight();
+			if (width.HasValue) width -= Padding.TotalWidth();
+			if (height.HasValue) height -= Padding.TotalHeight();
 
 			// Measure all subviews where both dimensions can be resolved
 			var haveResolvedSize = false;
@@ -47,11 +47,11 @@ namespace XibFree
 			foreach (var v in SubViews.Where(x => !x.Gone))
 			{
 				// Try to resolve subview width
-				var subViewWidth = float.MaxValue;
+				float? subViewWidth = null;
 				var lp = v.LayoutParameters;
 				if (lp.Width.Unit == Units.ParentRatio)
 				{
-					if (width.IsMaxFloat())
+					if (!width.HasValue)
 					{
 						unresolved.Add(v);
 						continue;
@@ -63,10 +63,10 @@ namespace XibFree
 				}
 
 				// Try to resolve subview height
-				var subViewHeight = float.MaxValue;
+				float? subViewHeight = null;
 				if (lp.Height.Unit == Units.ParentRatio)
 				{
-					if (height.IsMaxFloat())
+					if (!height.HasValue)
 					{
 						unresolved.Add(v);
 						continue;
@@ -89,13 +89,13 @@ namespace XibFree
 			// that were resolved, or none were, use their natural size
 			foreach (var v in unresolved)
 			{
-				var subViewWidth = float.MaxValue;
+				float? subViewWidth = null;
 				if (v.LayoutParameters.Width.Unit == Units.ParentRatio && haveResolvedSize)
 				{
 					subViewWidth = maxWidth - v.LayoutParameters.Margins.TotalWidth();
 				}
 
-				var subViewHeight = float.MaxValue;
+				float? subViewHeight = null;
 				if (v.LayoutParameters.Height.Unit == Units.ParentRatio && haveResolvedSize)
 				{
 					subViewHeight = maxHeight - v.LayoutParameters.Margins.TotalHeight();
@@ -107,48 +107,34 @@ namespace XibFree
 
 			var sizeMeasured = SizeF.Empty;
 
-			if (width.IsMaxFloat())
+			if (!width.HasValue)
 			{
 				sizeMeasured.Width = SubViews.Max(x => x.GetMeasuredSize().Width + x.LayoutParameters.Margins.TotalWidth()) + Padding.TotalWidth();
 			}
 
-			if (height.IsMaxFloat())
+			if (!height.HasValue)
 			{
 				sizeMeasured.Height = SubViews.Max(x=>x.GetMeasuredSize().Height + x.LayoutParameters.Margins.TotalHeight()) + Padding.TotalHeight();
 			}
 
 			// Done!
-			SetMeasuredSize(LayoutParameters.ResolveSize(new SizeF(width, height), sizeMeasured));
+			SetMeasuredSize(LayoutParameters.ResolveSize(width, height, sizeMeasured));
 		}
 
 		protected override void OnLayout(RectangleF newPosition, bool parentHidden)
 		{
+			base.OnLayout(newPosition, parentHidden);
+
 			// Make room for padding
 			newPosition = newPosition.ApplyInsets(Padding);
+			var startingRect = new RectangleF(0, 0, newPosition.Width, newPosition.Height);
 
 			if (parentHidden || !Visible) return;
 
 			// Position each view according to it's gravity
 			foreach (var v in SubViews)
 			{
-				if (v.Gone)
-				{
-					v.Layout(RectangleF.Empty, false);
-					continue;
-				}
-
-				// If subview has a gravity specified, use it, otherwise use default
-				var g = v.LayoutParameters.Gravity;
-
-				// Get it's size
-				var size = v.GetMeasuredSize();
-
-				var startingRect = new RectangleF(0, 0, newPosition.Width, newPosition.Height);
-				// Work out it's position by apply margins and gravity
-				var subViewPosition = startingRect.ApplyInsets(v.LayoutParameters.Margins).ApplyGravity(size, g);
-
-				// Position it
-				v.Layout(subViewPosition, false);
+				v.Layout(v.MeasuredFrame(startingRect), false);
 			}
 		}
 	}

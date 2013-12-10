@@ -66,7 +66,7 @@ namespace XibFree
 			if (Layout == null) return;
 
 			// Remeasure the layout
-			Layout.Measure(Bounds.Width, float.MaxValue);
+			Layout.Measure(Bounds.Width, null);
 
 			var size = Layout.GetMeasuredSize();
 

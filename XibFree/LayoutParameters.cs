@@ -31,7 +31,7 @@ namespace XibFree
 		/// <param name="width">Width.</param>
 		/// <param name="height">Height.</param>
 		/// <param name="weight">Weight.</param>
-		public LayoutParameters(Dimension width, Dimension height, float weight = 1)
+		public LayoutParameters(Dimension width, Dimension height, int weight = 1)
 		{
 			Width = width;
 			Height = height;
@@ -47,7 +47,7 @@ namespace XibFree
 		public Dimension Height { get; set; }
 
 		/// <summary>Gets or sets the weight of a AutoSize.FillParent view relative to its sibling views</summary>
-		public float Weight { get; set; }
+		public int Weight { get; set; }
 
 		/// <summary>Gets or sets the whitepsace margins that should be left around a view</summary>
 		public UIEdgeInsets Margins
@@ -91,16 +91,16 @@ namespace XibFree
 		public Visibility Visibility { get; set; }
 
 		/// <summary>Gets or sets the minimum width.</summary>
-		public float MinWidth { get; set; }
+		public float? MinWidth { get; set; }
 
 		/// <summary>Gets or sets the maximum width.</summary>
-		public float MaxWidth { get; set; }
+		public float? MaxWidth { get; set; }
 
 		/// <summary>Gets or sets the minimum height.</summary>
-		public float MinHeight { get; set; }
+		public float? MinHeight { get; set; }
 
 		/// <summary>Gets or sets the max height.</summary>
-		public float MaxHeight { get; set; }
+		public float? MaxHeight { get; set; }
 
 		private static SizeF GetScreenSize()
 		{
@@ -132,45 +132,54 @@ namespace XibFree
 			return hostView.Bounds.Size;
 		}
 
-		private static float TryResolve(Dimension dimension, float parentSize)
+		private static float? TryResolve(Dimension dimension, float? parentSize)
 		{
-			var ratio = dimension.Ratio;
+			float? d = null;
 			switch (dimension.Unit)
 			{
 				case Units.Absolute:
-					return dimension.Value;
+					d = dimension.Value;
+					break;
 				case Units.ParentRatio:
-					return parentSize.IsMaxFloat() ? float.MaxValue : parentSize * ratio;
+					if (parentSize.HasValue) d = parentSize.Value * dimension.Value;
+					break;
 				default:
-					return float.MaxValue;
+					break;
 			}
+			return d;
 		}
 
-		internal float TryResolveWidth(View view, float parentWidth)
+		internal float? TryResolveWidth(View view, float? parentWidth)
 		{
-			if (Width.Unit == Units.HostRatio) return GetHostSize(view).Width * Width.Ratio;
-			if (Width.Unit == Units.ScreenRatio) return GetScreenSize().Width * Width.Ratio;
+			if (Width.Unit == Units.HostRatio) return GetHostSize(view).Width * Width.Value;
+			if (Width.Unit == Units.ScreenRatio) return GetScreenSize().Width * Width.Value;
 
 			return TryResolve(Width, parentWidth);
 		}
 	
-		internal float TryResolveHeight(View view, float parentHeight)
+		internal float? TryResolveHeight(View view, float? parentHeight)
 		{
-			if (Height.Unit == Units.HostRatio) return GetHostSize(view).Height * Height.Ratio;
-			if (Height.Unit == Units.ScreenRatio) return GetScreenSize().Height * Height.Ratio;
+			if (Height.Unit == Units.HostRatio) return GetHostSize(view).Height * Height.Value;
+			if (Height.Unit == Units.ScreenRatio) return GetScreenSize().Height * Height.Value;
 
 			return TryResolve(Height, parentHeight);
 		}
 
-		internal SizeF ResolveSize(SizeF size, SizeF sizeMeasured)
+		internal SizeF ResolveSize(float? width, float? height, SizeF sizeMeasured)
 		{
+			var size = SizeF.Empty;
+
 			// Resolve measured size
-			if (size.Width.IsMaxFloat()) size.Width = sizeMeasured.Width;
-			if (size.Height.IsMaxFloat()) size.Height = sizeMeasured.Height;
+			size.Width = width ?? sizeMeasured.Width;
+			size.Height = height ?? sizeMeasured.Height;
+
+			// Resolve Content Ratios
+			if (Width.Unit == Units.ContentRatio) size.Width *= Width.Value;
+			if (Height.Unit == Units.ContentRatio) size.Height *= Height.Value;
 
 			// Finally, resolve aspect ratios
-			if (Width.Unit == Units.AspectRatio) size.Width = size.Height * Width.Ratio;
-			if (Height.Unit == Units.AspectRatio) size.Height = size.Width * Height.Ratio;
+			if (Width.Unit == Units.AspectRatio) size.Width = size.Height * Width.Value;
+			if (Height.Unit == Units.AspectRatio) size.Height = size.Width * Height.Value;
 
 			return size;
 		}

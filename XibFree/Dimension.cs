@@ -66,11 +66,6 @@ namespace XibFree
 		{
 			return new Dimension(value);
 		}
-
-		public float Ratio 
-		{
-			get  { return (Unit == Units.Absolute) ? 1 : Value; } 
-		}
 	}
 }
 

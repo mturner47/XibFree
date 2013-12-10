@@ -27,7 +27,7 @@ namespace XibFree
 		private bool _measuredSizeValid;
 		private ViewGroup _parent;
 		private UIView _innerView;
-		private IHost _host;
+		private UILayoutHost _host;
 
 		protected View()
 		{
@@ -41,43 +41,42 @@ namespace XibFree
 		public ViewGroup Parent
 		{
 			get { return _parent; }
-			internal set
+			internal set { _parent = value; }
+		}
+
+		private UIView DefaultInnerView()
+		{
+			return new UIView(RectangleF.Empty) 
 			{
-				if (_parent == value) return;
-				if (_parent != null)
-				{
-					_parent.RemoveSubView(this);
-				}
-
-				_parent = value;
-
-				if (_parent != null)
-				{
-					_parent.AddSubView(this);
-				}
-			}
+				BackgroundColor = UIColor.Clear,
+				AutoresizingMask = UIViewAutoresizing.None,
+			};
 		}
 
 		public virtual UIView InnerView
 		{
 			get
 			{
-				if (_innerView != null) return _innerView;
-				_innerView = new UIView(RectangleF.Empty)
-				{
-					BackgroundColor = UIColor.Clear,
-					AutoresizingMask = UIViewAutoresizing.None,
-				};
-				return _innerView;
+				return _innerView ?? (_innerView = DefaultInnerView());
 			}
 			set
 			{
 				if (_innerView == value) return;
 
-				if (_innerView.Superview != null) InnerView.RemoveFromSuperview();
+				var newInnerView = value ?? DefaultInnerView();
 
-				if (value == null) return;
-				_innerView = value;
+				if (_innerView != null)
+				{
+					if (Parent != null) Parent.ReplaceInnerView(this, newInnerView);
+				}
+
+				if (Parent == null && Host != null)
+				{
+					_innerView.RemoveFromSuperview();
+					Host.GetUIView().AddSubview(newInnerView);
+				}
+
+				_innerView = newInnerView;
 
 				// Turn off auto-resizing, we'll take care of that thanks
 				_innerView.AutoresizingMask = UIViewAutoresizing.None;
@@ -88,14 +87,14 @@ namespace XibFree
 		public LayoutParameters LayoutParameters { get; set; }
 
 		// Internal helper to walk the parent view hierachy and find the view that's hosting this view hierarchy
-		internal IHost Host
+		public UILayoutHost Host
 		{
 			get
 			{
 				if (_host != null) return _host;
 				return Parent != null ? Parent.Host : null;
 			}
-			set { _host = value; }
+			internal set { _host = value; }
 		}
 
 		public bool Gone
@@ -124,9 +123,9 @@ namespace XibFree
 		protected abstract void OnLayout(RectangleF newPosition, bool parentHidden);
 
 		/// <summary>Measures the subviews of this view</summary>
-		/// <param name="parentWidth">Available width of the parent view group (might be float.MaxValue).</param>
-		/// <param name="parentHeight">Available height of the parent view group(might be float.MaxValue)</param>
-		public void Measure(float parentWidth, float parentHeight)
+		/// <param name="parentWidth">Available width of the parent view group</param>
+		/// <param name="parentHeight">Available height of the parent view group</param>
+		public void Measure(float? parentWidth, float? parentHeight)
 		{
 			_measuredSizeValid = false;
 			OnMeasure(parentWidth, parentHeight);
@@ -136,7 +135,7 @@ namespace XibFree
 		/// <summary>Overridden by view groups to perform the actual layout measurement</summary>
 		/// <param name="parentWidth">Parent width.</param>
 		/// <param name="parentHeight">Parent height.</param>
-		protected abstract void OnMeasure(float parentWidth, float parentHeight);
+		protected abstract void OnMeasure(float? parentWidth, float? parentHeight);
 
 		/// <summary>
 		/// Called by derived implementations of onMeasure to store the measured dimensions
@@ -145,11 +144,11 @@ namespace XibFree
 		/// <param name="size">Size.</param>
 		protected void SetMeasuredSize(SizeF size)
 		{
-			if (!LayoutParameters.MinWidth.IsEqualTo(0) && size.Width < LayoutParameters.MinWidth) size.Width = LayoutParameters.MinWidth;
-			if (!LayoutParameters.MinHeight.IsEqualTo(0) && size.Height < LayoutParameters.MinHeight) size.Height = LayoutParameters.MinHeight;
+			if (LayoutParameters.MinWidth.HasValue && size.Width < LayoutParameters.MinWidth.Value) size.Width = LayoutParameters.MinWidth.Value;
+			if (LayoutParameters.MinHeight.HasValue && size.Height < LayoutParameters.MinHeight.Value) size.Height = LayoutParameters.MinHeight.Value;
 
-			if (!LayoutParameters.MaxWidth.IsEqualTo(0) && size.Width > LayoutParameters.MaxWidth) size.Width = LayoutParameters.MaxWidth;
-			if (!LayoutParameters.MaxHeight.IsEqualTo(0) && size.Height > LayoutParameters.MaxHeight) size.Height = LayoutParameters.MaxHeight;
+			if (LayoutParameters.MaxWidth.HasValue && size.Width < LayoutParameters.MaxWidth.Value) size.Width = LayoutParameters.MaxWidth.Value;
+			if (LayoutParameters.MaxHeight.HasValue && size.Height < LayoutParameters.MaxHeight.Value) size.Height = LayoutParameters.MaxHeight.Value;
 
 			_measuredSize = size;
 			_measuredSizeValid = true;
@@ -183,11 +182,19 @@ namespace XibFree
 			else return (T)(object)LayoutViewWithTag(tag);
 		}
 
-		public abstract NativeView FindNativeView(UIView v);
+		public abstract View FindNativeView(UIView v);
 
 		public void RemoveFromSuperview()
 		{
 			if (Parent != null) Parent.RemoveSubView(this);
+		}
+
+		internal RectangleF MeasuredFrame(RectangleF startingFrame)
+		{
+			if (Gone) return RectangleF.Empty;
+			var g = LayoutParameters.Gravity;
+			var size = GetMeasuredSize();
+			return startingFrame.ApplyInsets(LayoutParameters.Margins).ApplyGravity(size, g);
 		}
 	}
 }
