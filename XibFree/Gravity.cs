@@ -25,7 +25,6 @@ namespace XibFree
 	[Flags]
 	public enum Gravity
 	{
-		None = 0x0000,
 		Left = 0x0001,
 		Right = 0x0002,
 		CenterHorizontal = 0x0004,
@@ -45,6 +44,7 @@ namespace XibFree
 
 		HorizontalMask = Left | Right | CenterHorizontal,
 		VerticalMask = Top | Bottom | CenterVertical,
+		Default = TopLeft,
 	}
 }
 

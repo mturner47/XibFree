@@ -21,7 +21,7 @@ namespace Demo
 				{
 					new NativeView
 					{
-						View = new UIView
+						InnerView = new UIView
 						{
 							BackgroundColor = UIColor.Blue
 						},
@@ -33,17 +33,16 @@ namespace Demo
 					},
 					new NativeView
 					{
-						View = new UILayoutHost
+						InnerView = new UILayoutHost
 						{
 							BackgroundColor = UIColor.Yellow,
 							Layout = new LinearLayout(Orientation.Vertical)
 							{
-								Padding = new UIEdgeInsets(3,3,3,3),
 								SubViews = new View[]
 								{
 									new NativeView
 									{
-										View = new UILabel(RectangleF.Empty)
+										InnerView = new UILabel(RectangleF.Empty)
 										{
 											Text="Hello World",
 											Font = UIFont.SystemFontOfSize(24),
@@ -52,7 +51,7 @@ namespace Demo
 									},
 									new NativeView
 									{
-										View = new UILabel(RectangleF.Empty)
+										InnerView = new UILabel(RectangleF.Empty)
 										{
 											Text="Goodbye",
 											Font = UIFont.SystemFontOfSize(24),
@@ -64,19 +63,19 @@ namespace Demo
 								{
 									Width = Dimension.FillParent,
 									Height = Dimension.WrapContent,
-									Margins = new UIEdgeInsets(10,10,10,10),
+									Margins = new UIEdgeInsets(13, 13, 13, 13),
 								},
 							},
 						},
 						Init = v =>
 						{
-							v.View.Layer.CornerRadius = 5;
-							v.View.Layer.MasksToBounds = true;
+							v.InnerView.Layer.CornerRadius = 5;
+							v.InnerView.Layer.MasksToBounds = true;
 						}
 					},
 					new NativeView
 					{
-						View = new UIView
+						InnerView = new UIView
 						{
 							BackgroundColor = UIColor.Blue
 						},

@@ -77,17 +77,17 @@ namespace Demo
 			{
 				Layout = new LinearLayout(Orientation.Horizontal)
 				{
-					Padding = new UIEdgeInsets(5,5,5,5),
 					LayoutParameters = new LayoutParameters
 					{
 						Width = Dimension.FillParent,
 						Height = Dimension.WrapContent,
+						Margins = new UIEdgeInsets(5,5,5,5),
 					},
 					SubViews = new View[]
 					{
 						new NativeView
 						{
-							View  = new UIImageView(RectangleF.Empty)
+							InnerView  = new UIImageView(RectangleF.Empty)
 							{
 								Image = UIImage.FromBundle("tts512.png"),
 							},
@@ -109,7 +109,7 @@ namespace Demo
 							{
 								new NativeView
 								{
-									View = _labelTitle = new UILabel
+									InnerView = _labelTitle = new UILabel
 									{
 										Text = "Title",
 										BackgroundColor = UIColor.Clear,
@@ -124,7 +124,7 @@ namespace Demo
 								},
 								new NativeView
 								{
-									View = _labelSubTitle = new UILabel
+									InnerView = _labelSubTitle = new UILabel
 									{
 										Text = "SubTitle",
 										BackgroundColor = UIColor.Clear,
@@ -140,7 +140,7 @@ namespace Demo
 								},
 								new NativeView
 								{
-									View = _labelLongText = new UILabel
+									InnerView = _labelLongText = new UILabel
 									{
 										BackgroundColor = UIColor.Clear,
 										Font = UIFont.SystemFontOfSize(12),
@@ -158,7 +158,7 @@ namespace Demo
 						},
 						new NativeView
 						{
-							View = _labelPercent = new UILabel
+							InnerView = _labelPercent = new UILabel
 							{
 								Text = "20%",
 								BackgroundColor = UIColor.Clear,

@@ -17,64 +17,99 @@
 using System;
 using MonoTouch.UIKit;
 using System.Drawing;
-using MonoTouch.CoreAnimation;
 
 namespace XibFree
 {
-	/// <summary>
-	/// Abstract base class for any item in the layout view hierarchy
-	/// </summary>
+	/// <summary>Abstract base class for any item in the layout view hierarchy</summary>
 	public abstract class View
 	{
 		private SizeF _measuredSize;
 		private bool _measuredSizeValid;
 		private ViewGroup _parent;
+		private UIView _innerView;
+		private UILayoutHost _host;
 
-		/// <summary>
-		/// Gets or sets this view's parent view
-		/// </summary>
-		/// <value>A reference to the parent view (or null)</value>
+		protected View()
+		{
+			LayoutParameters = new LayoutParameters
+			{
+				Gravity = Gravity.TopLeft
+			};
+		}
+
+		/// <summary>Gets or sets this view's parent view</summary>
 		public ViewGroup Parent
 		{
 			get { return _parent; }
-			internal set
+			internal set { _parent = value; }
+		}
+
+		private UIView DefaultInnerView()
+		{
+			return new UIView(RectangleF.Empty) 
 			{
-				if (_parent == value) return;
+				BackgroundColor = UIColor.Clear,
+				AutoresizingMask = UIViewAutoresizing.None,
+			};
+		}
 
-				// Detach old host
-				var host = GetHost();
-				if (host != null) OnDetach();
+		public virtual UIView InnerView
+		{
+			get
+			{
+				return _innerView ?? (_innerView = DefaultInnerView());
+			}
+			set
+			{
+				if (_innerView == value) return;
 
-				// Store new parent
-				_parent = value;
+				var newInnerView = value ?? DefaultInnerView();
 
-				// Attach to new host
-				host = GetHost();
-				if (host != null) OnAttach(host);
+				if (_innerView != null)
+				{
+					if (Parent != null) Parent.ReplaceInnerView(this, newInnerView);
+				}
+
+				if (Parent == null && Host != null)
+				{
+					_innerView.RemoveFromSuperview();
+					Host.GetUIView().AddSubview(newInnerView);
+				}
+
+				_innerView = newInnerView;
+
+				// Turn off auto-resizing, we'll take care of that thanks
+				_innerView.AutoresizingMask = UIViewAutoresizing.None;
 			}
 		}
 
-		/// <summary>
-		/// Gets or sets the layout parameters for this view
-		/// </summary>
-		/// <value>The layout parameters.</value>
-		public virtual LayoutParameters LayoutParameters { get; set; }
+		/// <summary>Gets or sets the layout parameters for this view</summary>
+		public LayoutParameters LayoutParameters { get; set; }
 
 		// Internal helper to walk the parent view hierachy and find the view that's hosting this view hierarchy
-		internal virtual IHost GetHost()
+		public UILayoutHost Host
 		{
-			return (_parent != null) ? _parent.GetHost() : null;
+			get
+			{
+				if (_host != null) return _host;
+				return Parent != null ? Parent.Host : null;
+			}
+			internal set { _host = value; }
 		}
 
-		// Internal notification that this view has been attached to a hosting view
-		internal virtual void OnAttach(IHost host) { }
+		public bool Gone
+		{
+			get { return LayoutParameters.Visibility == Visibility.Gone; }
+			set { LayoutParameters.Visibility = value ? Visibility.Gone : Visibility.Visible; }
+		}
 
-		// Internal notification that this view has been detached from a hosting view
-		internal virtual void OnDetach() { }
+		public bool Visible
+		{
+			get { return LayoutParameters.Visibility == Visibility.Visible; }
+			set { LayoutParameters.Visibility = value ? Visibility.Visible : Visibility.Invisible; }
+		}
 
-		/// <summary>
-		/// Layout the subviews in this view using dimensions calculated during the last measure cycle
-		/// </summary>
+		/// <summary>Layout the subviews in this view using dimensions calculated during the last measure cycle</summary>
 		/// <param name="newPosition">The new position of this view</param>
 		/// <param name="parentHidden">Whether the parent is hidden</param>
 		public void Layout(RectangleF newPosition, bool parentHidden)
@@ -82,37 +117,25 @@ namespace XibFree
 			OnLayout(newPosition, parentHidden);
 		}
 
-		/// <summary>
-		/// Overridden by view groups to perform the actual layout process
-		/// </summary>
+		/// <summary>Overridden by view groups to perform the actual layout process</summary>
 		/// <param name="newPosition">New position.</param>
 		/// <param name="parentHidden">Whether the parent is hidden</param>
 		protected abstract void OnLayout(RectangleF newPosition, bool parentHidden);
 
-		/// <summary>
-		/// Measures the subviews of this view
-		/// </summary>
-		/// <param name="parentWidth">Available width of the parent view group (might be float.MaxValue).</param>
-		/// <param name="parentHeight">Available height of the parent view group(might be float.MaxValue)</param>
-		public void Measure(float parentWidth, float parentHeight)
+		/// <summary>Measures the subviews of this view</summary>
+		/// <param name="parentWidth">Available width of the parent view group</param>
+		/// <param name="parentHeight">Available height of the parent view group</param>
+		public void Measure(float? parentWidth, float? parentHeight)
 		{
 			_measuredSizeValid = false;
 			OnMeasure(parentWidth, parentHeight);
 			if (!_measuredSizeValid) throw new InvalidOperationException("onMeasure didn't set measurement before returning");
 		}
 
-		/// <summary>
-		/// Overridden by view groups to perform the actual layout measurement
-		/// </summary>
+		/// <summary>Overridden by view groups to perform the actual layout measurement</summary>
 		/// <param name="parentWidth">Parent width.</param>
 		/// <param name="parentHeight">Parent height.</param>
-		protected abstract void OnMeasure(float parentWidth, float parentHeight);
-
-		// Mark the measurement of this view as invalid
-		public void InvalidateMeasure()
-		{
-			_measuredSizeValid = false;
-		}
+		protected abstract void OnMeasure(float? parentWidth, float? parentHeight);
 
 		/// <summary>
 		/// Called by derived implementations of onMeasure to store the measured dimensions
@@ -121,19 +144,17 @@ namespace XibFree
 		/// <param name="size">Size.</param>
 		protected void SetMeasuredSize(SizeF size)
 		{
-			if (!LayoutParameters.MinWidth.IsEqualTo(0) && size.Width < LayoutParameters.MinWidth) size.Width = LayoutParameters.MinWidth;
-			if (!LayoutParameters.MinHeight.IsEqualTo(0) && size.Height < LayoutParameters.MinHeight) size.Height = LayoutParameters.MinHeight;
+			if (LayoutParameters.MinWidth.HasValue && size.Width < LayoutParameters.MinWidth.Value) size.Width = LayoutParameters.MinWidth.Value;
+			if (LayoutParameters.MinHeight.HasValue && size.Height < LayoutParameters.MinHeight.Value) size.Height = LayoutParameters.MinHeight.Value;
 
-			if (!LayoutParameters.MaxWidth.IsEqualTo(0) && size.Width > LayoutParameters.MaxWidth) size.Width = LayoutParameters.MaxWidth;
-			if (!LayoutParameters.MaxHeight.IsEqualTo(0) && size.Height > LayoutParameters.MaxHeight) size.Height = LayoutParameters.MaxHeight;
+			if (LayoutParameters.MaxWidth.HasValue && size.Width < LayoutParameters.MaxWidth.Value) size.Width = LayoutParameters.MaxWidth.Value;
+			if (LayoutParameters.MaxHeight.HasValue && size.Height < LayoutParameters.MaxHeight.Value) size.Height = LayoutParameters.MaxHeight.Value;
 
 			_measuredSize = size;
 			_measuredSizeValid = true;
 		}
 
-		/// <summary>
-		/// Retrieve the measured dimensions of this view
-		/// </summary>
+		/// <summary>Retrieve the measured dimensions of this view</summary>
 		/// <returns>The measured size.</returns>
 		public SizeF GetMeasuredSize()
 		{
@@ -141,26 +162,17 @@ namespace XibFree
 			return _measuredSize;
 		}
 
-		internal abstract CALayer GetDisplayLayer();
-		internal abstract CALayer FindFirstSublayer();
-
-		/// <summary>
-		/// Overridden to locate a UIView 
-		/// </summary>
+		/// <summary>Overridden to locate a UIView</summary>
 		/// <returns>The view with tag.</returns>
 		/// <param name="tag">Tag.</param>
 		internal abstract UIView UIViewWithTag(int tag);
 
-		/// <summary>
-		/// Overridden to locate a layout hierarchy view
-		/// </summary>
+		/// <summary>Overridden to locate a layout hierarchy view</summary>
 		/// <returns>The view with tag.</returns>
 		/// <param name="tag">Tag.</param>
 		internal abstract View LayoutViewWithTag(int tag);
 
-		/// <summary>
-		/// Locates a view in either the layout or GUI hierarchy
-		/// </summary>
+		/// <summary>Locates a view in either the layout or GUI hierarchy</summary>
 		/// <returns>The view with tag.</returns>
 		/// <param name="tag">Tag.</param>
 		/// <typeparam name="T">The type of view to return</typeparam>
@@ -170,35 +182,19 @@ namespace XibFree
 			else return (T)(object)LayoutViewWithTag(tag);
 		}
 
-		public abstract NativeView FindNativeView(UIView v);
-
-		public bool Gone
-		{
-			get
-			{
-				return LayoutParameters.Visibility == Visibility.Gone;
-			}
-			set
-			{
-				LayoutParameters.Visibility = value ? Visibility.Gone : Visibility.Visible;
-			}
-		}
-
-		public bool Visible
-		{
-			get
-			{
-				return LayoutParameters.Visibility == Visibility.Visible;
-			}
-			set
-			{
-				LayoutParameters.Visibility = value ? Visibility.Visible : Visibility.Invisible;
-			}
-		}
+		public abstract View FindNativeView(UIView v);
 
 		public void RemoveFromSuperview()
 		{
 			if (Parent != null) Parent.RemoveSubView(this);
+		}
+
+		internal RectangleF MeasuredFrame(RectangleF startingFrame)
+		{
+			if (Gone) return RectangleF.Empty;
+			var g = LayoutParameters.Gravity;
+			var size = GetMeasuredSize();
+			return startingFrame.ApplyInsets(LayoutParameters.Margins).ApplyGravity(size, g);
 		}
 	}
 }

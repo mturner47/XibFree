@@ -26,7 +26,7 @@ namespace Demo
 				{
 					new NativeView
 					{
-						View = new UIView
+						InnerView = new UIView
 						{
 							BackgroundColor = UIColor.Blue
 						},
@@ -38,26 +38,29 @@ namespace Demo
 					},
 					new LinearLayout(Orientation.Vertical)
 					{
-						Padding = new UIEdgeInsets(10,10,10,10),
-						Layer = new CAGradientLayer
+						Init = linearLayout =>
 						{
-							Colors = new[]
+							var layer = new CAGradientLayer
 							{
-								new MonoTouch.CoreGraphics.CGColor(0.9f, 0.9f, 0.9f, 1f),
-								new MonoTouch.CoreGraphics.CGColor(0.7f, 0.7f, 0.7f, 1f)
-							},
-							Locations = new NSNumber[]
-							{
-								0.0f,
-								1.0f
-							},
-							CornerRadius = 5,
+								Colors = new[]
+								{
+									new MonoTouch.CoreGraphics.CGColor(0.9f, 0.9f, 0.9f, 1f),
+									new MonoTouch.CoreGraphics.CGColor(0.7f, 0.7f, 0.7f, 1f)
+								},
+								Locations = new NSNumber[]
+								{
+									0.0f,
+									1.0f
+								},
+								CornerRadius = 5,
+							};
+							linearLayout.InnerView.Layer.AddSublayer(layer);
 						},
 						SubViews = new View[]
 						{
 							new NativeView
 							{
-								View = new UILabel(RectangleF.Empty)
+								InnerView = new UILabel(RectangleF.Empty)
 								{
 									Text="Hello World",
 									Font = UIFont.SystemFontOfSize(24),
@@ -66,7 +69,7 @@ namespace Demo
 							},
 							new NativeView
 							{
-								View = label = new UILabel(RectangleF.Empty)
+								InnerView = label = new UILabel(RectangleF.Empty)
 								{
 									Text="Goodbye",
 									Font = UIFont.SystemFontOfSize(24),
@@ -84,12 +87,12 @@ namespace Demo
 						{
 							Width = Dimension.FillParent,
 							Height = Dimension.WrapContent,
-							Margins = new UIEdgeInsets(10,10,10,10),
+							Margins = new UIEdgeInsets(20,20,20,20),
 						},
 					},
 					new NativeView
 					{
-						View = new UIView
+						InnerView = new UIView
 						{
 							BackgroundColor = UIColor.Blue
 						},
@@ -101,7 +104,7 @@ namespace Demo
 					},
 					new NativeView
 					{
-						View = new UIButton(UIButtonType.RoundedRect),
+						InnerView = new UIButton(UIButtonType.RoundedRect),
 						LayoutParameters = new LayoutParameters
 						{
 							Width = Dimension.FillParent,

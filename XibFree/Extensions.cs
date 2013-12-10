@@ -22,25 +22,13 @@ namespace XibFree
 {
 	internal static class Extensions
 	{
-		public static bool IsEqualTo(this float f, float other)
-		{
-			return Math.Abs(f - other) < float.Epsilon;
-		}
-
-		public static bool IsMaxFloat(this float f)
-		{
-			return Math.Abs(f - float.MaxValue) < float.Epsilon;
-		}
-
-		/// <summary>
-		/// Applies a set of UIEdgeInsets to a RectangleF
-		/// </summary>
+		/// <summary>Applies a set of UIEdgeInsets to a RectangleF</summary>
 		/// <returns>The adjusted rectangle</returns>
 		/// <param name="rect">The rectangle to be adjusted.</param>
 		/// <param name="insets">The edge insets to be applied</param>
 		public static RectangleF ApplyInsets(this RectangleF rect, UIEdgeInsets insets)
 		{
-			return new RectangleF(rect.Left + insets.Left, rect.Top + insets.Top, rect.Width - insets.TotalWidth(), rect.Height- insets.TotalHeight());
+			return new RectangleF(rect.Left + insets.Left, rect.Top + insets.Top, rect.Width - insets.TotalWidth(), rect.Height - insets.TotalHeight());
 		}
 
 		public static float TotalWidth(this UIEdgeInsets insets)

@@ -17,7 +17,6 @@
 using System;
 using MonoTouch.UIKit;
 using System.Drawing;
-using MonoTouch.CoreAnimation;
 
 namespace XibFree
 {
@@ -27,96 +26,60 @@ namespace XibFree
 	/// </summary>
 	public class NativeView : View
 	{
-		// The hosted native view
-		private UIView _view;
-
-		/// <summary>
-		/// Initializes a new instance of the <see cref="XibFree.NativeView"/> class.
-		/// </summary>
-		public NativeView()
-		{
-			LayoutParameters = new LayoutParameters();
-		}
-
-		/// <summary>
-		/// Initializes a new instance of the <see cref="XibFree.NativeView"/> class.
-		/// </summary>
-		/// <param name="view">The view to be hosted.</param>
-		/// <param name="lp">The view's layout parameters.</param>
 		public NativeView(UIView view, LayoutParameters lp)
 		{
-			_view = view;
+			InnerView = view;
 			LayoutParameters = lp;
 		}
 
-		public override sealed LayoutParameters LayoutParameters
+		public NativeView() { }
+
+		/// <summary>Custom Measurer to override the calculated size for the passed UIView</summary>
+		public Func<UIView, SizeF, SizeF> Measurer;
+
+		public override sealed UIView InnerView
 		{
-			get
-			{
-				var nestedHost = _view as UILayoutHost;
-				if (nestedHost != null && nestedHost.Layout != null)
-				{
-					return nestedHost.Layout.LayoutParameters;
-				}
-				return base.LayoutParameters;
-			}
+			get { return base.InnerView; }
+			set { base.InnerView = value; }
 		}
 
 		/// <summary>
-		/// Gets or sets the native view
+		/// Sets a an action to be immediately called.  Provided to allowing execution of code inline
+		/// with the layout of the view hierarchy.  See examples.
 		/// </summary>
-		/// <value>The view.</value>
-		public UIView View
+		public Action<NativeView> Init
 		{
-			get { return _view; }
-			set
-			{
-				if (_view == value) return;
-
-				// Detach old view from host
-				var host = GetHost();
-				if (host != null) OnDetach();
-
-				// Store the new view
-				_view = value;
-
-				// Turn off auto-resizing, we'll take care of that thanks
-				_view.AutoresizingMask = UIViewAutoresizing.None;
-
-				// Attach the new view to the host
-				if (host != null) OnAttach(host);
-			}
+			set { value(this); }
 		}
 
-		/// <summary>
-		/// Get the hosted view, casting to the specified type
-		/// </summary>
+		/// <summary>Get the hosted view, casting to the specified type</summary>
 		/// <typeparam name="T">The 1st type parameter.</typeparam>
-		public T As<T>() where T:UIView
+		public T As<T>() where T : UIView
 		{
-			return _view as T;
+			return InnerView as T;
 		}
 
-		/// <summary>
-		/// Overridden to set the position of the native view
-		/// </summary>
+		public override View FindNativeView(UIView v)
+		{
+			return (InnerView == v) ? this : null;
+		}
+
+		/// <summary>Overridden to set the position of the native view</summary>
 		/// <param name="newPosition">New position.</param>
 		/// <param name="parentHidden">If Parent is Hidden </param>
 		protected override void OnLayout(RectangleF newPosition, bool parentHidden)
 		{
-			if (_view == null) return;
+			if (InnerView == null) return;
 
 			// Simple, just reposition the view!
-			_view.Hidden = parentHidden || !Visible;
-			_view.Frame = newPosition;
+			InnerView.Hidden = parentHidden || !Visible;
+			InnerView.Frame = newPosition;
 		}
 
-		/// <summary>
-		/// Overridden to provide measurement support for this native view
-		/// </summary>
+		/// <summary>Overridden to provide measurement support for this native view</summary>
 		/// <param name="parentWidth">Parent width.</param>
 		/// <param name="parentHeight">Parent height.</param>
-		protected override void OnMeasure(float parentWidth, float parentHeight)
+		protected override void OnMeasure(float? parentWidth, float? parentHeight)
 		{
 			// Resolve width for absolute and parent ratio
 			var width = LayoutParameters.TryResolveWidth(this, parentWidth);
@@ -124,79 +87,30 @@ namespace XibFree
 
 			// Do we need to measure our content?
 			var sizeMeasured = SizeF.Empty;
-			if (width.IsMaxFloat() || height.IsMaxFloat())
+			if (!width.HasValue || !height.HasValue)
 			{
-				var sizeToFit = new SizeF(width, height);
-				if (Measurer != null) sizeMeasured = Measurer(_view, sizeToFit);
+				var sizeToFitWidth = width ?? 0;
+				var sizeToFitHeight = height ?? 0;
+				var sizeToFit = new SizeF(sizeToFitWidth, sizeToFitHeight);
+				if (Measurer != null) sizeMeasured = Measurer(InnerView, sizeToFit);
 				else
 				{
-					sizeMeasured = _view.SizeThatFits(sizeToFit);
-					if (LayoutParameters.Width.Unit == Units.ContentRatio) sizeMeasured.Width = sizeMeasured.Width * LayoutParameters.Width.Value;
-					if (LayoutParameters.Height.Unit == Units.ContentRatio) sizeMeasured.Height = sizeMeasured.Height * LayoutParameters.Height.Value;
+					sizeMeasured = InnerView.SizeThatFits(sizeToFit);
 				}
 			}
 
 			// Set the measured size
-			SetMeasuredSize(LayoutParameters.ResolveSize(new SizeF(width, height), sizeMeasured));
-		}
-
-		/// <summary>
-		/// Overridden to add this native view to the parent native view
-		/// </summary>
-		/// <param name="host">Host.</param>
-		internal override void OnAttach(IHost host)
-		{
-			// If we have a view, attach to the hosting view by adding as a subview
-			if (_view != null) host.GetUIView().Add(_view);
-		}
-
-		/// <summary>
-		/// Overridden to remove this native view from the parent native view
-		/// </summary>
-		internal override void OnDetach()
-		{
-			// If we have a view, remove from the hosting view by removing it from the superview
-			if (_view != null) _view.RemoveFromSuperview();
-		}
-
-		/// Delegate for a plugin measurement support
-		public delegate SizeF NativeMeasurer(UIView native, SizeF constraint);
-
-		public NativeMeasurer Measurer { get; set; }
-
-		/// <summary>
-		/// Sets a an action to be immediately called.  Provided to allowing execution of code inline
-		/// with the layout of the view hierarchy.  See examples.
-		/// </summary>
-		/// <value>An Action to be called immediately</value>
-		public Action<NativeView> Init
-		{
-			set { value(this); }
+			SetMeasuredSize(LayoutParameters.ResolveSize(width, height, sizeMeasured));
 		}
 
 		internal override UIView UIViewWithTag(int tag)
 		{
-			return (_view != null) ? _view.ViewWithTag(tag) : null;
+			return (InnerView != null) ? InnerView.ViewWithTag(tag) : null;
 		}
 
 		internal override View LayoutViewWithTag(int tag)
 		{
-			return (_view != null && _view.Tag == tag) ? this : null;
-		}
-
-		public override NativeView FindNativeView(UIView v)
-		{
-			return (_view == v) ? this : null;
-		}
-
-		internal override CALayer GetDisplayLayer()
-		{
-			return _view.Layer;
-		}
-
-		internal override CALayer FindFirstSublayer()
-		{
-			return null;
+			return (InnerView != null && InnerView.Tag == tag) ? this : null;
 		}
 	}
 }

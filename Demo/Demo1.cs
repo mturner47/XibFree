@@ -24,7 +24,7 @@ namespace Demo
 					new NativeView
 					{
 						// This is the UIView
-						View = new UIView(RectangleF.Empty)
+						InnerView = new UIView(RectangleF.Empty)
 						{
 							// Set properties here
 							BackgroundColor = UIColor.Red,
@@ -41,7 +41,7 @@ namespace Demo
 					// A second view that will be stacked below the first
 					new NativeView
 					{
-						View = new UIView(RectangleF.Empty)
+						InnerView = new UIView(RectangleF.Empty)
 						{
 							BackgroundColor = UIColor.Blue,
 						},

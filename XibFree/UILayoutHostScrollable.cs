@@ -19,16 +19,12 @@ using System.Drawing;
 
 namespace XibFree
 {
-	/// <summary>
-	/// UILayoutHostScrollable is the native UIView that hosts that XibFree layout
-	/// </summary>
+	/// <summary>UILayoutHostScrollable is the native UIView that hosts that XibFree layout</summary>
 	public sealed class UILayoutHostScrollable : UIScrollView
 	{
 		private readonly UILayoutHost _layoutHost;
 
-		/// <summary>
-		/// Initializes a new instance of the <see cref="XibFree.UILayoutHostScrollable"/> class.
-		/// </summary>
+		/// <summary>Initializes a new instance of the <see cref="XibFree.UILayoutHostScrollable"/> class.</summary>
 		/// <param name="layout">Root of the view hierarchy to be hosted by this layout host</param>
 		/// <param name="frame">Frame for the UIView </param>
 		public UILayoutHostScrollable(ViewGroup layout, RectangleF frame) : base(frame)
@@ -46,17 +42,10 @@ namespace XibFree
 
 		public UILayoutHostScrollable(ViewGroup layout) : this(layout, RectangleF.Empty) { }
 
-		/// <summary>
-		/// The ViewGroup declaring the layout to hosted
-		/// </summary>
-		/// <value>The ViewGroup.</value>
+		/// <summary>The ViewGroup declaring the layout to hosted</summary>
 		public ViewGroup Layout
 		{
-			get
-			{
-				return _layoutHost.Layout;
-			}
-
+			get { return _layoutHost.Layout; }
 			set
 			{
 				_layoutHost.Layout = value;
@@ -71,15 +60,13 @@ namespace XibFree
 
 
 		/// <Docs>Lays out subviews.</Docs>
-		/// <summary>
-		/// Called by iOS to update the layout of this view
-		/// </summary>
+		/// <summary>Called by iOS to update the layout of this view</summary>
 		public override void LayoutSubviews()
 		{
 			if (Layout == null) return;
 
 			// Remeasure the layout
-			Layout.Measure(Bounds.Width, float.MaxValue);
+			Layout.Measure(Bounds.Width, null);
 
 			var size = Layout.GetMeasuredSize();
 
