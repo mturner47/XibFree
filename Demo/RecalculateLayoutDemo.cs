@@ -118,15 +118,14 @@ namespace Demo
 								if (label.Text=="ShortString")
 								{
 									label.Text = "This is a long string that should wrap and cause the layout to change";
-									label.GetNativeView().LayoutParameters.Margins = new UIEdgeInsets(10,10,10,10);
+									v.LayoutParameters.Margins = new UIEdgeInsets(10,10,10,10);
 								}
 								else
 								{
 									label.Text = "ShortString";
-									label.GetNativeView().LayoutParameters.Margins = new UIEdgeInsets(20,20,20,20);
+									v.LayoutParameters.Margins = new UIEdgeInsets(20,20,20,20);
 								}
-								label.GetLayoutHost().SetNeedsLayout();
-								//or: this.View.SetNeedsLayout();
+								v.Host.SetNeedsLayout();
 							};
 						}
 					}

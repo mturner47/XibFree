@@ -18,7 +18,6 @@ using System;
 using MonoTouch.UIKit;
 using System.Collections.Generic;
 using System.Linq;
-using MonoTouch.CoreAnimation;
 using System.Drawing;
 
 namespace XibFree

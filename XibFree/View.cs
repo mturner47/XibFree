@@ -147,8 +147,8 @@ namespace XibFree
 			if (LayoutParameters.MinWidth.HasValue && size.Width < LayoutParameters.MinWidth.Value) size.Width = LayoutParameters.MinWidth.Value;
 			if (LayoutParameters.MinHeight.HasValue && size.Height < LayoutParameters.MinHeight.Value) size.Height = LayoutParameters.MinHeight.Value;
 
-			if (LayoutParameters.MaxWidth.HasValue && size.Width < LayoutParameters.MaxWidth.Value) size.Width = LayoutParameters.MaxWidth.Value;
-			if (LayoutParameters.MaxHeight.HasValue && size.Height < LayoutParameters.MaxHeight.Value) size.Height = LayoutParameters.MaxHeight.Value;
+			if (LayoutParameters.MaxWidth.HasValue && size.Width > LayoutParameters.MaxWidth.Value) size.Width = LayoutParameters.MaxWidth.Value;
+			if (LayoutParameters.MaxHeight.HasValue && size.Height > LayoutParameters.MaxHeight.Value) size.Height = LayoutParameters.MaxHeight.Value;
 
 			_measuredSize = size;
 			_measuredSizeValid = true;

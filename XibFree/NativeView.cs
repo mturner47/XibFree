@@ -72,7 +72,7 @@ namespace XibFree
 			if (InnerView == null) return;
 
 			// Simple, just reposition the view!
-			InnerView.Hidden = parentHidden || !Visible;
+			if (parentHidden || !Visible) InnerView.Hidden = true;
 			InnerView.Frame = newPosition;
 		}
 
